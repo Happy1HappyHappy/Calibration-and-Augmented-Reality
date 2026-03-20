@@ -114,15 +114,18 @@ int ARApp::run()
         }
     }
 
-    // ==== Process Markers, Axes, and Virtual Objects ====
+    // ==== Draw Detected Markers and UI ====
+    // If calibrated and we have detected markers
     if (isCalibrated && !ids.empty())
     {
+        // For each detected marker
         for (size_t i = 0; i < ids.size(); i++)
         {
-            if (cv::solvePnP(objPoints, corners[i], currentPose.cameraMatrix, currentPose.distCoeffs, currentPose.rvec, currentPose.tvec))
+            cv::Mat rvec, tvec;
+            if (cv::solvePnP(objPoints, corners[i], currentPose.cameraMatrix, currentPose.distCoeffs, rvec, tvec))
             {
                 // Draw coordinate axes
-                cv::drawFrameAxes(frame, currentPose.cameraMatrix, currentPose.distCoeffs, currentPose.rvec, currentPose.tvec, 0.7f);
+                cv::drawFrameAxes(frame, currentPose.cameraMatrix, currentPose.distCoeffs, rvec, tvec, 0.7f);
                 
                 // Render virtual objects
                 projector.render(frame, currentPose);
@@ -130,14 +133,18 @@ int ARApp::run()
         }
     }
 
-    // Draw UI and save snapshots
+    // Draw the current sample count and status message on the frame
     std::string progStr = "SAMPLES: " + std::to_string(currentCount) + "/20";
     cv::putText(frame, progStr, cv::Point(30, 40), cv::FONT_HERSHEY_DUPLEX, 0.8, cv::Scalar(255, 255, 255), 2);
     cv::putText(frame, uiStatus, cv::Point(30, frame.rows - 40), cv::FONT_HERSHEY_DUPLEX, 1.0, statusColor, 2);
 
+    // Save the snapshot if the flag is set, which means we just successfully calibrated
     if (shouldSaveSnapshot)
     {
+        // Draw a white border around the frame to indicate successful calibration
         cv::rectangle(frame, cv::Point(0, 0), cv::Point(frame.cols, frame.rows), {255, 255, 255}, 10);
+
+        // Save the current frame with detected corners and axes drawn on it for documentation
         calib.saveCurrentFrame(frame, "data/snapshots", "snapshot", currentTS);
     }
 

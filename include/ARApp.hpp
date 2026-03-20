@@ -24,7 +24,9 @@ private:
     cv::Mat frame;        // current frame captured from the camera
     cv::VideoCapture cap; // video capture object for accessing the camera
 
-    // Unified Camera Pose and Intrinsics
+    // Calibrator data storage
+    cv::Mat cameraMatrix;
+    cv::Mat distCoeffs;
     CameraPose currentPose;
 
     bool isCalibrated = false; // flag to indicate whether the camera has been calibrated

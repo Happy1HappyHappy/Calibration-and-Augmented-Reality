@@ -10,7 +10,8 @@ Description: Implements the virtual object functions for the augmented reality a
 #include <cmath>
 
 VirtualObjectProjector::VirtualObjectProjector() : currentShapeType(ShapeType::SQUARE) {
-    generateSquare(); // Default shape
+    // generateSquare(); // Default shape
+    generatePacman();
 }
 
 void VirtualObjectProjector::setShape(ShapeType type) {
@@ -36,7 +37,7 @@ void VirtualObjectProjector::generateSquare() {
     float size = 1.0f;
     currentShape.vertices = {
         {0, 0, 0}, {size, 0, 0}, {size, size, 0}, {0, size, 0},       // Bottom face
-        {0, 0, -size}, {size, 0, -size}, {size, size, -size}, {0, size, -size} // Top face (Z negative is "above" marker)
+        {0, 0, size}, {size, 0, size}, {size, size, size}, {0, size, size} // Top face (Z negative is "above" marker)
     };
     
     currentShape.lines = {
