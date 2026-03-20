@@ -85,7 +85,7 @@ int ARApp::run()
             else
             {
                 // Perform camera calibration using the collected data and get the RMS error
-                double rms = calib.calibrate(cameraMatrix, distCoeffs);
+                double rms = calib.calibrate(currentPose.cameraMatrix, currentPose.distCoeffs);
 
                 if (rms < 2.0)
                 {
@@ -97,7 +97,7 @@ int ARApp::run()
                     // Update the parameters to current camera_params file
                     // and also save them to a log file for this calibration session
                     currentTS = calib.getCurrentTimestamp();
-                    calib.saveParameters(calibFile, cameraMatrix, distCoeffs, rms, currentTS);
+                    calib.saveParameters(calibFile, currentPose.cameraMatrix, currentPose.distCoeffs, rms, currentTS);
 
                     shouldSaveSnapshot = true; // Set the flag to save the snapshot
 
@@ -114,36 +114,33 @@ int ARApp::run()
         }
     }
 
-    // ==== Draw Detected Markers and UI ====
-    // If calibrated and we have detected markers
+    // ==== Process Markers, Axes, and Virtual Objects ====
     if (isCalibrated && !ids.empty())
     {
-        // For each detected marker
         for (size_t i = 0; i < ids.size(); i++)
         {
-            // estimate its pose and draw the axes on the frame
-            cv::Mat rvec, tvec;
-            if (cv::solvePnP(objPoints, corners[i], cameraMatrix, distCoeffs, rvec, tvec))
+            if (cv::solvePnP(objPoints, corners[i], currentPose.cameraMatrix, currentPose.distCoeffs, currentPose.rvec, currentPose.tvec))
             {
-                cv::drawFrameAxes(frame, cameraMatrix, distCoeffs, rvec, tvec, 0.7f);
+                // Draw coordinate axes
+                cv::drawFrameAxes(frame, currentPose.cameraMatrix, currentPose.distCoeffs, currentPose.rvec, currentPose.tvec, 0.7f);
+                
+                // Render virtual objects
+                projector.render(frame, currentPose);
             }
         }
     }
 
-    // Draw the current sample count and status message on the frame
+    // Draw UI and save snapshots
     std::string progStr = "SAMPLES: " + std::to_string(currentCount) + "/20";
     cv::putText(frame, progStr, cv::Point(30, 40), cv::FONT_HERSHEY_DUPLEX, 0.8, cv::Scalar(255, 255, 255), 2);
     cv::putText(frame, uiStatus, cv::Point(30, frame.rows - 40), cv::FONT_HERSHEY_DUPLEX, 1.0, statusColor, 2);
 
-    // Save the snapshot if the flag is set, which means we just successfully calibrated
     if (shouldSaveSnapshot)
     {
-        // Draw a white border around the frame to indicate successful calibration
         cv::rectangle(frame, cv::Point(0, 0), cv::Point(frame.cols, frame.rows), {255, 255, 255}, 10);
-
-        // Save the current frame with detected corners and axes drawn on it for documentation
         calib.saveCurrentFrame(frame, "data/snapshots", "snapshot", currentTS);
     }
+
 
     // Show the frame with detected markers and axes
     cv::imshow("AR Application", frame);
@@ -159,6 +156,8 @@ int ARApp::run()
 //         3. cv::line() to draw the objects
 //         Note: be aware of +/- z axis
 //         Extension: integrate OpenCV with OpenGL to render shaded objects
+
+
 
 // ====== Featured-based ======
 // Step 6: Detect Robust Features
