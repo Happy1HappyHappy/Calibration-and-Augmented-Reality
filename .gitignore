@@ -39,3 +39,14 @@
 
 # debug information files
 *.dwo
+
+# VScode files
+.DS_Store
+
+# Local files
+.github/
+/.idea/
+/results/
+/bin/
+/obj/
+/data/
