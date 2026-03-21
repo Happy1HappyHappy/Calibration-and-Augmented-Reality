@@ -113,6 +113,25 @@ int ARApp::run()
             }
         }
     }
+    // The drawing modes
+    else if (key == '1')
+    {
+        currentMode = VirtualObjectProjector::ShapeType::PACMAN;
+        projector.setShape(currentMode);
+        uiStatus = "MODE: PACMAN";
+    }
+    else if (key == '2')
+    {
+        currentMode = VirtualObjectProjector::ShapeType::SQUARE;
+        projector.setShape(currentMode);
+        uiStatus = "MODE: SQUARE";
+    }
+    else if (key == '3')
+    {
+        currentMode = VirtualObjectProjector::ShapeType::SPACE_NEEDLE;
+        projector.setShape(currentMode);
+        uiStatus = "MODE: SPACE NEEDLE";
+    }
 
     // ==== Draw Detected Markers and UI ====
     // If calibrated and we have detected markers

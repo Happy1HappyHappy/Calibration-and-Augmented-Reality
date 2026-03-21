@@ -22,7 +22,7 @@ public:
     enum class ShapeType {
         PACMAN,
         SQUARE,
-        CUSTOM
+        SPACE_NEEDLE
     };
 
     VirtualObjectProjector();
@@ -44,4 +44,5 @@ private:
     // Default shapes
     void generateSquare();
     void generatePacman();
+    void generateSpaceNeedle();
 };
