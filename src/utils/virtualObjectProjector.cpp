@@ -10,9 +10,8 @@ Description: Implements the virtual object functions for the augmented reality a
 #include <cmath>
 
 // Constructor initializes the default shape -> square
-VirtualObjectProjector::VirtualObjectProjector() : currentShapeType(ShapeType::PACMAN) {
-    // generateSquare(); // Default shape
-    generatePacman(); // Pre-generate pacman shape for quick switching
+VirtualObjectProjector::VirtualObjectProjector() : currentShapeType(ShapeType::SQUARE) {
+    generateSquare(); // Default shape
 }
 
 // Set the current shape type
@@ -22,13 +21,9 @@ void VirtualObjectProjector::setShape(ShapeType type) {
         generatePacman();
     } else if (type == ShapeType::SQUARE) {
         generateSquare();
+    } else if (type == ShapeType::SPACE_NEEDLE) {
+        generateSpaceNeedle();
     }
-}
-
-// Set custom shape data
-void VirtualObjectProjector::setCustomShape(const ShapeData& customShape) {
-    currentShapeType = ShapeType::CUSTOM;
-    currentShape = customShape;
 }
 
 // Set current shape data to a square
@@ -59,32 +54,28 @@ void VirtualObjectProjector::generatePacman() {
     
     // Generate a 3D wireframe Pacman (sphere missing a wedge)
     float radius = 0.5f;
-    cv::Point3f center(0.5f, 0.5f, -radius); // Centered above marker
+    cv::Point3f center(0.5f, 0.5f, radius); // Centered above marker
     int slices = 15;
     int stacks = 15;
     
     float mouthAngle = CV_PI / 4.0; // 45 degrees
     
     for (int i = 0; i <= stacks; ++i) {
-        float phi = CV_PI * float(i) / float(stacks);
-        for (int j = 0; j <= slices; ++j) {
-            float theta = 2.0f * CV_PI * float(j) / float(slices);
-            
-            // Limit theta to create the mouth "wedge" opening
-            if (theta > (2.0f * CV_PI - mouthAngle/2.0f) || theta < mouthAngle/2.0f) {
-                float clampedTheta = (theta > CV_PI) ? (2.0f * CV_PI - mouthAngle/2.0f) : (mouthAngle/2.0f);
-                float x = center.x + radius * std::sin(phi) * std::cos(clampedTheta);
-                float y = center.y + radius * std::sin(phi) * std::sin(clampedTheta);
-                float z = center.z + radius * std::cos(phi);
-                currentShape.vertices.push_back({x, y, z});
-            } else {
-                float x = center.x + radius * std::sin(phi) * std::cos(theta);
-                float y = center.y + radius * std::sin(phi) * std::sin(theta);
-                float z = center.z + radius * std::cos(phi);
-                currentShape.vertices.push_back({x, y, z});
-            }
+    float phi = CV_PI * float(i) / float(stacks);
+    for (int j = 0; j <= slices; ++j) {
+        float theta = 2.0f * CV_PI * float(j) / float(slices);
+
+        float t = theta;
+        if (theta > (2.0f * CV_PI - mouthAngle/2.0f) || theta < mouthAngle/2.0f) {
+            t = (theta > CV_PI) ? (2.0f * CV_PI - mouthAngle/2.0f) : (mouthAngle/2.0f);
         }
+
+        float x = center.x + radius * std::sin(phi) * std::cos(t);
+        float y = center.y - radius * std::cos(phi);                  
+        float z = center.z + radius * std::sin(phi) * std::sin(t);   
+        currentShape.vertices.push_back({x, y, z});
     }
+}
     
     // Add lines for wireframe
     for (int i = 0; i < stacks; ++i) {
@@ -99,6 +90,157 @@ void VirtualObjectProjector::generatePacman() {
     }
     
     currentShape.color = cv::Scalar(0, 255, 255); // Yellow colored pacman
+}
+
+// Set current shape data to the space needle
+void VirtualObjectProjector::generateSpaceNeedle() {
+    currentShape.vertices.clear();
+    currentShape.lines.clear();
+
+    // Overall size normalized to the marker footprint (1.0 x 1.0)
+    // Space Needle centered at x=0.5, y=0.5 and extending upward
+    float cx = 0.5f, cy = 0.5f;
+
+    // ─── Z heights for each structural level ─────────────────
+    float zBase      = 0.0f;
+    float zTripodTop = 0.25f;
+    float zColBottom = 0.28f;
+    float zColMid    = 0.68f;
+    float zDiscBot   = 0.73f;
+    float zDiscTop   = 0.83f;
+    float zSpireTop  = 1.15f;
+
+    // ─── Helper: add a regular polygon ring at a given height ──
+    // Returns the index of the first vertex
+    auto addRing = [&](float x, float y, float z, float r, int n) -> int {
+        int startIdx = currentShape.vertices.size();
+        for (int i = 0; i < n; ++i) {
+            float angle = 2.0f * CV_PI * i / n;
+            currentShape.vertices.push_back({
+                x + r * std::cos(angle),
+                y + r * std::sin(angle),
+                z
+            });
+        }
+        return startIdx;
+    };
+
+    // ─── Helper: connect two rings with the same segment count ─
+    auto connectRings = [&](int a, int b, int n) {
+        for (int i = 0; i < n; ++i) {
+            int next = (i + 1) % n;
+            currentShape.lines.push_back({a + i, a + next});      // Horizontal edge on the source ring
+            currentShape.lines.push_back({a + i, b + i});          // Vertical connection between rings
+        }
+    };
+
+    // ─── Helper: draw the polygon edges within one ring ────────
+    auto ringLines = [&](int start, int n) {
+        for (int i = 0; i < n; ++i)
+            currentShape.lines.push_back({start + i, start + (i + 1) % n});
+    };
+
+    const int SEG = 12; // Number of segments used for circular parts
+
+    // ══════════════════════════════════════════
+    // 1. Base platform
+    // ══════════════════════════════════════════
+    int rBase0 = addRing(cx, cy, zBase,       0.34f, SEG);
+    int rBase1 = addRing(cx, cy, zBase + 0.02f, 0.34f, SEG);
+    connectRings(rBase0, rBase1, SEG);
+    ringLines(rBase1, SEG);
+
+    // ══════════════════════════════════════════
+    // 2. Tripod supports from the outer base to the main column
+    // ══════════════════════════════════════════
+    // Each leg is wider at the bottom and narrows toward the column
+    float legAngles[3] = {0.0f, 2.0f * CV_PI / 3.0f, 4.0f * CV_PI / 3.0f};
+    float legWidthAngle = 0.15f; // 腳的半角寬度（rad）
+    float colRadius = 0.07f;     // 主柱底部半徑
+
+    for (int k = 0; k < 3; ++k) {
+        float a = legAngles[k];
+        // Two bottom corners of the leg at base height
+        float x0L = cx + 0.31f * std::cos(a - legWidthAngle);
+        float y0L = cy + 0.31f * std::sin(a - legWidthAngle);
+        float x0R = cx + 0.31f * std::cos(a + legWidthAngle);
+        float y0R = cy + 0.31f * std::sin(a + legWidthAngle);
+        // Two top corners of the leg, narrowed toward the column
+        float x1L = cx + colRadius * std::cos(a - legWidthAngle * 0.3f);
+        float y1L = cy + colRadius * std::sin(a - legWidthAngle * 0.3f);
+        float x1R = cx + colRadius * std::cos(a + legWidthAngle * 0.3f);
+        float y1R = cy + colRadius * std::sin(a + legWidthAngle * 0.3f);
+
+        int i0 = currentShape.vertices.size();
+        currentShape.vertices.push_back({x0L, y0L, zBase + 0.02f});   // i0
+        currentShape.vertices.push_back({x0R, y0R, zBase + 0.02f});   // i0+1
+        currentShape.vertices.push_back({x1L, y1L, zTripodTop});      // i0+2
+        currentShape.vertices.push_back({x1R, y1R, zTripodTop});      // i0+3
+
+        // Four boundary edges of the leg
+        currentShape.lines.push_back({i0,   i0+1}); // Bottom edge
+        currentShape.lines.push_back({i0,   i0+2}); // Left edge
+        currentShape.lines.push_back({i0+1, i0+3}); // Right edge
+        currentShape.lines.push_back({i0+2, i0+3}); // Top edge
+        // Diagonal brace across the leg
+        currentShape.lines.push_back({i0, i0+3});
+    }
+
+    // ══════════════════════════════════════════
+    // 3. Main column, slightly tapered upward
+    // ══════════════════════════════════════════
+    int rCol0 = addRing(cx, cy, zColBottom, colRadius,   SEG); // Column base
+    int rCol1 = addRing(cx, cy, zColMid,   colRadius * 0.6f, SEG); // Narrowed mid column
+    connectRings(rCol0, rCol1, SEG);
+
+    // ══════════════════════════════════════════
+    // 4. Observation deck disc
+    // ══════════════════════════════════════════
+    int rD0 = addRing(cx, cy, zDiscBot, 0.28f, SEG); // Outer rim at disc bottom
+    int rD1 = addRing(cx, cy, zDiscBot, 0.12f, SEG); // Inner rim at disc bottom
+    int rD2 = addRing(cx, cy, zDiscTop, 0.25f, SEG); // Outer rim at disc top
+    int rD3 = addRing(cx, cy, zDiscTop, 0.08f, SEG); // Inner rim at disc top
+
+    // Connect column top to the lower inner disc rim
+    connectRings(rCol1, rD1, SEG);
+    ringLines(rD1, SEG);
+
+    // Bottom outer disc rim
+    ringLines(rD0, SEG);
+    // Radial lines across the bottom face of the disc
+    for (int i = 0; i < SEG; ++i)
+        currentShape.lines.push_back({rD1 + i, rD0 + i});
+
+    // Disc side surface
+    connectRings(rD0, rD2, SEG);
+
+    // Top face of the disc
+    ringLines(rD2, SEG);
+    ringLines(rD3, SEG);
+    for (int i = 0; i < SEG; ++i)
+        currentShape.lines.push_back({rD3 + i, rD2 + i});
+
+    // ══════════════════════════════════════════
+    // 5. Antenna spire tapering upward in simple sections
+    // ══════════════════════════════════════════
+    float spireR[4] = {0.06f, 0.03f, 0.015f, 0.0f};
+    float spireZ[4] = {zDiscTop, zDiscTop + 0.10f, zDiscTop + 0.20f, zSpireTop};
+
+    int prevSpire = addRing(cx, cy, spireZ[0], spireR[0], SEG);
+    connectRings(rD3, prevSpire, SEG); // Connect the disc top inner rim to the spire base
+
+    for (int s = 1; s < 3; ++s) {
+        int curSpire = addRing(cx, cy, spireZ[s], spireR[s], SEG);
+        connectRings(prevSpire, curSpire, SEG);
+        prevSpire = curSpire;
+    }
+    // Tip of the spire as a single vertex
+    int tipIdx = currentShape.vertices.size();
+    currentShape.vertices.push_back({cx, cy, zSpireTop});
+    for (int i = 0; i < SEG; ++i)
+        currentShape.lines.push_back({prevSpire + i, tipIdx});
+
+    currentShape.color = cv::Scalar(255, 200, 0); // Blue-white tone
 }
 
 // Rendering the virtual object on the frame using the given pose and camera parameters

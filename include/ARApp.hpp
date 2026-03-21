@@ -28,6 +28,7 @@ private:
     cv::Mat distCoeffs;
 
     bool isCalibrated = false; // flag to indicate whether the camera has been calibrated
+    VirtualObjectProjector::ShapeType currentMode = VirtualObjectProjector::ShapeType::PACMAN; // state variable for current shape mode
 
     // 3D object points for solvePnP (assuming a single marker for simplicity)
     std::vector<cv::Point3f> objPoints;
