@@ -10,7 +10,7 @@ Description: Implements the virtual object functions for the augmented reality a
 #include <cmath>
 
 // Constructor initializes the default shape -> square
-VirtualObjectProjector::VirtualObjectProjector() : currentShapeType(ShapeType::SQUARE) {
+VirtualObjectProjector::VirtualObjectProjector() : currentShapeType(ShapeType::PACMAN) {
     // generateSquare(); // Default shape
     generatePacman(); // Pre-generate pacman shape for quick switching
 }
