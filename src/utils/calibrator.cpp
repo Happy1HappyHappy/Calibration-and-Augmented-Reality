@@ -99,21 +99,9 @@ void Calibrator::saveCalibrationData(const std::vector<int> &ids,
         std::cout << "Reached max samples. Removed the oldest record." << std::endl;
     }
 
-    std::vector<cv::Point2f> flattened_corners;
-    std::vector<cv::Point3f> current_point_set;
-
-    // For each detected marker, we will append its corners and corresponding 3D
-    // points to the current sample set
-    auto marker_obj_points = getMarkerObjectPoints(1.0f); // assuming marker size is 1.0 unit
-
-    for (size_t i = 0; i < ids.size(); i++)
-    {
-        flattened_corners.insert(flattened_corners.end(), corners[i].begin(), corners[i].end());
-        current_point_set.insert(current_point_set.end(), marker_obj_points.begin(), marker_obj_points.end());
-    }
-
-    corner_list.push_back(flattened_corners);
-    point_list.push_back(current_point_set);
+    // Store the corners and corresponding 3D points for this marker
+    corner_list.push_back(corners[0]);
+    point_list.push_back(getMarkerObjectPoints(MARKER_LENGTH));
 
     std::cout << "Stored sample [" << corner_list.size() << "/" << MAX_SAMPLES << "]" << std::endl;
 }
