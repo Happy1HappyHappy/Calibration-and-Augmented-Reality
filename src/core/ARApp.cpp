@@ -85,7 +85,7 @@ int ARApp::run()
             else
             {
                 // Perform camera calibration using the collected data and get the RMS error
-                double rms = calib.calibrate(currentPose.cameraMatrix, currentPose.distCoeffs);
+                double rms = calib.calibrate(cameraMatrix, distCoeffs);
 
                 if (rms < 2.0)
                 {
@@ -97,7 +97,7 @@ int ARApp::run()
                     // Update the parameters to current camera_params file
                     // and also save them to a log file for this calibration session
                     currentTS = calib.getCurrentTimestamp();
-                    calib.saveParameters(calibFile, currentPose.cameraMatrix, currentPose.distCoeffs, rms, currentTS);
+                    calib.saveParameters(calibFile, cameraMatrix, distCoeffs, rms, currentTS);
 
                     shouldSaveSnapshot = true; // Set the flag to save the snapshot
 
@@ -121,14 +121,15 @@ int ARApp::run()
         // For each detected marker
         for (size_t i = 0; i < ids.size(); i++)
         {
+            // estimate its pose and draw the axes on the frame
             cv::Mat rvec, tvec;
-            if (cv::solvePnP(objPoints, corners[i], currentPose.cameraMatrix, currentPose.distCoeffs, rvec, tvec))
+            if (cv::solvePnP(objPoints, corners[i], cameraMatrix, distCoeffs, rvec, tvec))
             {
                 // Draw coordinate axes
-                cv::drawFrameAxes(frame, currentPose.cameraMatrix, currentPose.distCoeffs, rvec, tvec, 0.7f);
+                cv::drawFrameAxes(frame, cameraMatrix, distCoeffs, rvec, tvec, 0.7f);
                 
                 // Render virtual objects
-                projector.render(frame, currentPose);
+                projector.render(frame, rvec, tvec, cameraMatrix, distCoeffs);
             }
         }
     }

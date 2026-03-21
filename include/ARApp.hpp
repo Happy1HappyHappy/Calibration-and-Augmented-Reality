@@ -8,7 +8,6 @@ Description: Declares the ARApp class for the augmented reality application.
 
 #pragma once // Include guard
 
-#include "common.hpp"
 #include "calibrator.hpp"
 #include "virtualObjectProjector.hpp"
 #include <string>
@@ -27,7 +26,6 @@ private:
     // Calibrator data storage
     cv::Mat cameraMatrix;
     cv::Mat distCoeffs;
-    CameraPose currentPose;
 
     bool isCalibrated = false; // flag to indicate whether the camera has been calibrated
 

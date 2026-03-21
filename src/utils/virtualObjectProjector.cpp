@@ -10,8 +10,8 @@ Description: Implements the virtual object functions for the augmented reality a
 #include <cmath>
 
 VirtualObjectProjector::VirtualObjectProjector() : currentShapeType(ShapeType::SQUARE) {
-    // generateSquare(); // Default shape
-    generatePacman();
+    generateSquare(); // Default shape
+    // generatePacman();
 }
 
 void VirtualObjectProjector::setShape(ShapeType type) {
@@ -96,12 +96,12 @@ void VirtualObjectProjector::generatePacman() {
     currentShape.color = cv::Scalar(0, 255, 255); // Yellow colored pacman
 }
 
-void VirtualObjectProjector::render(cv::Mat& frame, const CameraPose& pose)
+void VirtualObjectProjector::render(cv::Mat& frame, const cv::Mat& rvec, const cv::Mat& tvec, const cv::Mat& cameraMatrix, const cv::Mat& distCoeffs)
 {
-    if (currentShape.vertices.empty() || pose.rvec.empty() || pose.tvec.empty()) return;
+    if (currentShape.vertices.empty() || rvec.empty() || tvec.empty()) return;
 
     std::vector<cv::Point2f> imagePoints;
-    cv::projectPoints(currentShape.vertices, pose.rvec, pose.tvec, pose.cameraMatrix, pose.distCoeffs, imagePoints);
+    cv::projectPoints(currentShape.vertices, rvec, tvec, cameraMatrix, distCoeffs, imagePoints);
 
     // Draw lines
     for (const auto& lineIndices : currentShape.lines) {

@@ -1,5 +1,3 @@
-#include <opencv2/opencv.hpp>
-#include "common.hpp"
 /*
 Claire Liu, Yu-Jing Wei
 virtualObject.hpp
@@ -8,6 +6,7 @@ Path: include/virtualObject.hpp
 Description: Declares the virtual object functions for the augmented reality application.
 */
 
+#include <opencv2/opencv.hpp>
 
 struct ShapeData {
     std::vector<cv::Point3f> vertices;
@@ -34,7 +33,7 @@ public:
     // Update is no longer needed as we pass pose directly to render
     // void update(const CameraPose& pose);
                 
-    void render(cv::Mat& frame, const CameraPose& pose);
+    void render(cv::Mat& frame, const cv::Mat& rvec, const cv::Mat& tvec, const cv::Mat& cameraMatrix, const cv::Mat& distCoeffs);
 
 private:
     ShapeType currentShapeType;
