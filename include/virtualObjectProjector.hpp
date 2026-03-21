@@ -8,6 +8,7 @@ Description: Declares the virtual object functions for the augmented reality app
 
 #include <opencv2/opencv.hpp>
 
+// Data structure to hold shape information
 struct ShapeData {
     std::vector<cv::Point3f> vertices;
     std::vector<std::vector<int>> lines; // Each inner vector connects indices of vertices
@@ -28,17 +29,19 @@ public:
     
     // Set current shape
     void setShape(ShapeType type);
+    // Set custom shape data
     void setCustomShape(const ShapeData& shape);
 
-    // Update is no longer needed as we pass pose directly to render
-    // void update(const CameraPose& pose);
-                
+    // Render the virtual object on the frame using the given pose and camera parameters
     void render(cv::Mat& frame, const cv::Mat& rvec, const cv::Mat& tvec, const cv::Mat& cameraMatrix, const cv::Mat& distCoeffs);
 
 private:
+    // Shape state 
     ShapeType currentShapeType;
+    // Shape data for current state
     ShapeData currentShape;
 
+    // Default shapes
     void generateSquare();
     void generatePacman();
 };

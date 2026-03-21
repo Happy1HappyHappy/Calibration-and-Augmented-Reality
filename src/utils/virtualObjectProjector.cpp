@@ -9,11 +9,13 @@ Description: Implements the virtual object functions for the augmented reality a
 #include "virtualObjectProjector.hpp"
 #include <cmath>
 
-VirtualObjectProjector::VirtualObjectProjector() : currentShapeType(ShapeType::SQUARE) {
-    generateSquare(); // Default shape
-    // generatePacman();
+// Constructor initializes the default shape -> square
+VirtualObjectProjector::VirtualObjectProjector() : currentShapeType(ShapeType::PACMAN) {
+    // generateSquare(); // Default shape
+    generatePacman(); // Pre-generate pacman shape for quick switching
 }
 
+// Set the current shape type
 void VirtualObjectProjector::setShape(ShapeType type) {
     currentShapeType = type;
     if (type == ShapeType::PACMAN) {
@@ -23,11 +25,13 @@ void VirtualObjectProjector::setShape(ShapeType type) {
     }
 }
 
+// Set custom shape data
 void VirtualObjectProjector::setCustomShape(const ShapeData& customShape) {
     currentShapeType = ShapeType::CUSTOM;
     currentShape = customShape;
 }
 
+// Set current shape data to a square
 void VirtualObjectProjector::generateSquare() {
     currentShape.vertices.clear();
     currentShape.lines.clear();
@@ -48,6 +52,7 @@ void VirtualObjectProjector::generateSquare() {
     currentShape.color = cv::Scalar(255, 0, 0); // Blue lines
 }
 
+// Set current shape data to a pacman
 void VirtualObjectProjector::generatePacman() {
     currentShape.vertices.clear();
     currentShape.lines.clear();
@@ -96,6 +101,7 @@ void VirtualObjectProjector::generatePacman() {
     currentShape.color = cv::Scalar(0, 255, 255); // Yellow colored pacman
 }
 
+// Rendering the virtual object on the frame using the given pose and camera parameters
 void VirtualObjectProjector::render(cv::Mat& frame, const cv::Mat& rvec, const cv::Mat& tvec, const cv::Mat& cameraMatrix, const cv::Mat& distCoeffs)
 {
     if (currentShape.vertices.empty() || rvec.empty() || tvec.empty()) return;
