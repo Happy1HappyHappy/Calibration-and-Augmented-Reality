@@ -16,6 +16,7 @@ private:
     // Constants for calibration
     const int MAX_SAMPLES = 20;
     const int MIN_SAMPLES = 5;
+    const float MARKER_LENGTH = 1.0f; // Assuming marker size is 1.0 unit for object points
 
     // For ArUco marker detection
     cv::aruco::Dictionary dictionary;
