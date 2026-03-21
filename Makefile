@@ -77,7 +77,7 @@ all: ar
 
 COMMON_OBJS = $(OBJDIR)/calibrator.o \
 			  $(OBJDIR)/projector.o \
-			  $(OBJDIR)/virtualObject.o
+			  $(OBJDIR)/virtualObjectProjector.o
 
 
 ar: $(OBJDIR)/main.o \

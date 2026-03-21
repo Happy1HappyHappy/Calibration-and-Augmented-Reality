@@ -125,7 +125,11 @@ int ARApp::run()
             cv::Mat rvec, tvec;
             if (cv::solvePnP(objPoints, corners[i], cameraMatrix, distCoeffs, rvec, tvec))
             {
+                // Draw coordinate axes
                 cv::drawFrameAxes(frame, cameraMatrix, distCoeffs, rvec, tvec, 0.7f);
+                
+                // Render virtual objects
+                projector.render(frame, rvec, tvec, cameraMatrix, distCoeffs);
             }
         }
     }
@@ -145,6 +149,7 @@ int ARApp::run()
         calib.saveCurrentFrame(frame, "data/snapshots", "snapshot", currentTS);
     }
 
+
     // Show the frame with detected markers and axes
     cv::imshow("AR Application", frame);
 
@@ -159,6 +164,8 @@ int ARApp::run()
 //         3. cv::line() to draw the objects
 //         Note: be aware of +/- z axis
 //         Extension: integrate OpenCV with OpenGL to render shaded objects
+
+
 
 // ====== Featured-based ======
 // Step 6: Detect Robust Features

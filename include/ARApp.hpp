@@ -9,6 +9,7 @@ Description: Declares the ARApp class for the augmented reality application.
 #pragma once // Include guard
 
 #include "calibrator.hpp"
+#include "virtualObjectProjector.hpp"
 #include <string>
 #include <vector>
 #include <filesystem>
@@ -18,6 +19,7 @@ class ARApp
 {
 private:
     Calibrator calib;     // Calibrator object for handling marker detection and camera calibration
+    VirtualObjectProjector projector; // Virtual object projector for rendering virtual objects in the scene
     cv::Mat frame;        // current frame captured from the camera
     cv::VideoCapture cap; // video capture object for accessing the camera
 
