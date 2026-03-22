@@ -87,7 +87,7 @@ int ARApp::run()
                 // Perform camera calibration using the collected data and get the RMS error
                 double rms = calib.calibrate(cameraMatrix, distCoeffs);
 
-                if (rms < 2.0)
+                if (rms < RMS_THRESHOLD)
                 {
                     // Calibration successed, update the status and prepare to save the snapshot
                     isCalibrated = true;
@@ -124,7 +124,7 @@ int ARApp::run()
     {
         currentMode = VirtualObjectProjector::ShapeType::SQUARE;
         projector.setShape(currentMode);
-        uiStatus = "MODE: SQUARE";
+        uiStatus = "MODE: CUBE";
     }
     else if (key == '3')
     {
@@ -147,8 +147,10 @@ int ARApp::run()
                 // Draw coordinate axes
                 cv::drawFrameAxes(frame, cameraMatrix, distCoeffs, rvec, tvec, 0.7f);
                 
-                // Render virtual objects
-                projector.render(frame, rvec, tvec, cameraMatrix, distCoeffs);
+                // Print rotation and translation data in real time
+                std::cout << "Marker ID: " << ids[i] 
+                          << " | rvec: " << rvec.t() 
+                          << " | tvec: " << tvec.t() << std::endl;
             }
         }
     }
@@ -168,7 +170,6 @@ int ARApp::run()
         calib.saveCurrentFrame(frame, "data/snapshots", "snapshot", currentTS);
     }
 
-
     // Show the frame with detected markers and axes
     cv::imshow("AR Application", frame);
 
@@ -183,8 +184,6 @@ int ARApp::run()
 //         3. cv::line() to draw the objects
 //         Note: be aware of +/- z axis
 //         Extension: integrate OpenCV with OpenGL to render shaded objects
-
-
 
 // ====== Featured-based ======
 // Step 6: Detect Robust Features
