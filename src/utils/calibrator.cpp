@@ -41,12 +41,15 @@ int Calibrator::detectAndDraw(cv::Mat &frame,
     // Use the ArUco detector to find markers in the frame. The detected corners
     // and their corresponding IDs will be stored in 'corners' and 'ids'
     detector.detectMarkers(frame, corners, ids, rejected);
-    if (!corners.empty() && !corners[0].empty())
-    {
-        std::cout << "Detected " << ids.size() << " markers. First marker at: ("
-                  << corners[0][0].x << ", "
-                  << corners[0][0].y << ")\n";
-    }
+
+    // For debugging: print the number of detected markers and the coordinates of
+    // the first corner of the first marker
+    // if (!corners.empty() && !corners[0].empty())
+    // {
+    //     std::cout << "Detected " << ids.size() << " markers. First marker at: ("
+    //               << corners[0][0].x << ", "
+    //               << corners[0][0].y << ")\n";
+    // }
 
     if (!ids.empty())
     {
@@ -221,6 +224,40 @@ bool Calibrator::saveParameters(const std::string &filename, const cv::Mat &came
     }
 
     return true;
+}
+
+/*
+Loads camera parameters from a YAML file. This function is used for a warm-start pre-calibration
+check to see if we already have valid parameters saved from a previous session.
+It returns true if the parameters were successfully loaded, and false otherwise.
+*/
+bool Calibrator::loadParameters(const std::string &filename, cv::Mat &camMatrix, cv::Mat &distCoeffs, double &rms)
+{
+    cv::FileStorage fs(filename, cv::FileStorage::READ);
+    if (!fs.isOpened())
+    {
+        return false;
+    }
+
+    fs["camera_matrix"] >> camMatrix;
+    fs["distortion_coefficients"] >> distCoeffs;
+    fs["rms"] >> rms;
+
+    std::cout << "=== Loaded Calibration Parameters ===" << std::endl;
+    std::cout << "RMS Error: " << rms << std::endl;
+
+    // print camera matrix in a readable format
+    std::cout << "Camera Matrix:\n"
+              << cv::format(camMatrix, cv::Formatter::FMT_PYTHON)
+              << std::endl;
+
+    // print distortion coefficients in a readable format
+    std::cout << "Distortion Coefficients:\n"
+              << cv::format(distCoeffs, cv::Formatter::FMT_PYTHON) << "\n"
+              << std::endl;
+
+    fs.release();
+    return !camMatrix.empty();
 }
 
 /*

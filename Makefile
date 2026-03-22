@@ -76,7 +76,6 @@ $(OBJDIR)/%.o: $(UTILSDIR)/%.cpp | $(OBJDIR)
 all: ar
 
 COMMON_OBJS = $(OBJDIR)/calibrator.o \
-			  $(OBJDIR)/projector.o \
 			  $(OBJDIR)/virtualObjectProjector.o
 
 
