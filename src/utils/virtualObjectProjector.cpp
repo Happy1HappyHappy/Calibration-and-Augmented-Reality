@@ -155,8 +155,8 @@ void VirtualObjectProjector::generateSpaceNeedle() {
     // ══════════════════════════════════════════
     // Each leg is wider at the bottom and narrows toward the column
     float legAngles[3] = {0.0f, 2.0f * CV_PI / 3.0f, 4.0f * CV_PI / 3.0f};
-    float legWidthAngle = 0.15f; // 腳的半角寬度（rad）
-    float colRadius = 0.07f;     // 主柱底部半徑
+    float legWidthAngle = 0.15f; 
+    float colRadius = 0.07f;     
 
     for (int k = 0; k < 3; ++k) {
         float a = legAngles[k];
