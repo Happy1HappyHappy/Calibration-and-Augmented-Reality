@@ -39,6 +39,8 @@ public:
                       std::vector<int> &ids,
                       std::vector<std::vector<cv::Point2f>> &corners);
     int getSampleCount() const { return corner_list.size(); }
+    int getMaxSamples() const { return MAX_SAMPLES; }
+    int getMinSamples() const { return MIN_SAMPLES; }
     void saveCalibrationData(const std::vector<int> &ids,
                              const std::vector<std::vector<cv::Point2f>> &corners);
     static std::vector<cv::Point3f> getMarkerObjectPoints(float marker_size);
@@ -49,6 +51,11 @@ public:
                         const cv::Mat &distCoeffs,
                         double rms,
                         const std::string &ts);
+    // pre-calibration check for warm-start
+    bool loadParameters(const std::string &filename,
+                        cv::Mat &camMatrix,
+                        cv::Mat &distCoeffs,
+                        double &rms);
     std::string getCurrentTimestamp();
     bool saveCurrentFrame(const cv::Mat &frame,
                           const std::string &folder,

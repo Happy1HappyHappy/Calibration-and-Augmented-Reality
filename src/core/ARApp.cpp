@@ -24,6 +24,20 @@ We will call this function in main() before starting the main loop.
 bool ARApp::initCamera(int id)
 {
     cap.open(id); // only open the camera when this function is called, not in the constructor
+
+    // Try to load existing calibration data from the YAML file
+    if (calib.loadParameters(calibFile, cameraMatrix, distCoeffs, currentRMS))
+    {
+        isCalibrated = true;
+        objPoints = Calibrator::getMarkerObjectPoints(1.0f);
+        uiStatus = "CALIBRATION PARAMETERS LOADED (RMS: " + std::to_string(currentRMS).substr(0, 4) + ")";
+    }
+    else
+    {
+        isCalibrated = false;
+        std::cout << "No calibration file found. Please calibrate using 's' key." << std::endl;
+    }
+
     return cap.isOpened();
 }
 
@@ -56,10 +70,8 @@ int ARApp::run()
     int key = cv::waitKey(10) & 0xFF;
     int currentCount = calib.getSampleCount();
 
-    static std::string uiStatus = "READY";    // Status message for UI display
-    static cv::Scalar statusColor(0, 255, 0); // Green color for status text
-    bool shouldSaveSnapshot = false;          // flag to indicate whether we should save the snapshot at the end of this function
-    static std::string currentTS = "";        // to store the timestamp for the current calibration session
+    bool shouldSaveSnapshot = false;   // flag to indicate whether we should save the snapshot at the end of this function
+    static std::string currentTS = ""; // to store the timestamp for the current calibration session
 
     // ===== Update Data & Do Calibration ======
     if (key == 's')
@@ -76,11 +88,11 @@ int ARApp::run()
             // update the sample count after saving data
             currentCount = calib.getSampleCount();
 
-            if (currentCount < 5)
+            if (currentCount < calib.getMinSamples())
             {
-                // Collecting samples, not enough for calibration yet
-                uiStatus = "SUCCESS: SAVED #" + std::to_string(currentCount);
-                statusColor = cv::Scalar(0, 255, 0); // green color for success saved status
+                // Not enough samples collected yet, prompt user to keep going
+                uiStatus = "COLLECTING... #" + std::to_string(currentCount);
+                statusColor = cv::Scalar(0, 255, 255); // Yellow color for collecting status
             }
             else
             {
@@ -116,21 +128,48 @@ int ARApp::run()
     // The drawing modes
     else if (key == '1')
     {
-        currentMode = VirtualObjectProjector::ShapeType::PACMAN;
-        projector.setShape(currentMode);
-        uiStatus = "MODE: PACMAN";
+        if (showObject && currentMode == VirtualObjectProjector::ShapeType::PACMAN)
+        {
+            showObject = false;
+            modeStatus = "MODE: NONE";
+        }
+        else
+        {
+            currentMode = VirtualObjectProjector::ShapeType::PACMAN;
+            projector.setShape(currentMode);
+            modeStatus = "MODE: PACMAN";
+            showObject = true;
+        }
     }
     else if (key == '2')
     {
-        currentMode = VirtualObjectProjector::ShapeType::SQUARE;
-        projector.setShape(currentMode);
-        uiStatus = "MODE: CUBE";
+        if (showObject && currentMode == VirtualObjectProjector::ShapeType::SQUARE)
+        {
+            showObject = false;
+            modeStatus = "MODE: NONE";
+        }
+        else
+        {
+            currentMode = VirtualObjectProjector::ShapeType::SQUARE;
+            projector.setShape(currentMode);
+            modeStatus = "MODE: CUBE";
+            showObject = true;
+        }
     }
     else if (key == '3')
     {
-        currentMode = VirtualObjectProjector::ShapeType::SPACE_NEEDLE;
-        projector.setShape(currentMode);
-        uiStatus = "MODE: SPACE NEEDLE";
+        if (showObject && currentMode == VirtualObjectProjector::ShapeType::SPACE_NEEDLE)
+        {
+            showObject = false;
+            modeStatus = "MODE: NONE";
+        }
+        else
+        {
+            currentMode = VirtualObjectProjector::ShapeType::SPACE_NEEDLE;
+            projector.setShape(currentMode);
+            modeStatus = "MODE: SPACE NEEDLE";
+            showObject = true;
+        }
     }
 
     // ==== Draw Detected Markers and UI ====
@@ -146,11 +185,17 @@ int ARApp::run()
             {
                 // Draw coordinate axes
                 cv::drawFrameAxes(frame, cameraMatrix, distCoeffs, rvec, tvec, 0.7f);
-                
-                // Print rotation and translation data in real time
-                std::cout << "Marker ID: " << ids[i] 
-                          << " | rvec: " << rvec.t() 
-                          << " | tvec: " << tvec.t() << std::endl;
+
+                // Render the current virtual object
+                if (showObject)
+                {
+                    projector.render(frame, rvec, tvec, cameraMatrix, distCoeffs);
+                }
+
+                // Print rotation and translation data in real time for debugging and verification
+                // std::cout << "Marker ID: " << ids[i]
+                //           << " | rvec: " << rvec.t()
+                //           << " | tvec: " << tvec.t() << std::endl;
             }
         }
     }
@@ -159,6 +204,7 @@ int ARApp::run()
     std::string progStr = "SAMPLES: " + std::to_string(currentCount) + "/20";
     cv::putText(frame, progStr, cv::Point(30, 40), cv::FONT_HERSHEY_DUPLEX, 0.8, cv::Scalar(255, 255, 255), 2);
     cv::putText(frame, uiStatus, cv::Point(30, frame.rows - 40), cv::FONT_HERSHEY_DUPLEX, 1.0, statusColor, 2);
+    cv::putText(frame, modeStatus, cv::Point(30, 80), cv::FONT_HERSHEY_DUPLEX, 0.8, cv::Scalar(0, 255, 255), 2);
 
     // Save the snapshot if the flag is set, which means we just successfully calibrated
     if (shouldSaveSnapshot)
@@ -177,14 +223,6 @@ int ARApp::run()
 }
 
 // TODO:
-// ====== Marker-based ======
-// Step 5: Create a Virtual Object(floats above the board and uses more than one color)
-//         1. Design the object in 3D coordinates
-//         2. Use projectPoints() to get 2D coordinates
-//         3. cv::line() to draw the objects
-//         Note: be aware of +/- z axis
-//         Extension: integrate OpenCV with OpenGL to render shaded objects
-
 // ====== Featured-based ======
 // Step 6: Detect Robust Features
 //         1. Use ORB/SIFT/SURF to detect keypoints and descriptors

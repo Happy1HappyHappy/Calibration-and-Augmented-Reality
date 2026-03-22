@@ -18,14 +18,21 @@ Description: Declares the ARApp class for the augmented reality application.
 class ARApp
 {
 private:
-    Calibrator calib;                 // Calibrator object for handling marker detection and camera calibration
-    VirtualObjectProjector projector; // Virtual object projector for rendering virtual objects in the scene
-    cv::Mat frame;                    // current frame captured from the camera
-    cv::VideoCapture cap;             // video capture object for accessing the camera
+    Calibrator calib;                               // Calibrator object for handling marker detection and camera calibration
+    VirtualObjectProjector projector;               // Virtual object projector for rendering virtual objects in the scene
+    cv::Mat frame;                                  // current frame captured from the camera
+    cv::VideoCapture cap;                           // video capture object for accessing the camera
+    std::string uiStatus = "READY";                 // Status message for UI display
+    cv::Scalar statusColor = cv::Scalar(0, 255, 0); // Green color for status text
+
+    // Virtual object rendering control
+    std::string modeStatus = "MODE: NONE";
+    bool showObject = false;
 
     // Calibrator data storage
     cv::Mat cameraMatrix;
     cv::Mat distCoeffs;
+    double currentRMS;
     float RMS_THRESHOLD = 2.0f; // threshold for acceptable RMS error during calibration
 
     bool isCalibrated = false;                                                                 // flag to indicate whether the camera has been calibrated
