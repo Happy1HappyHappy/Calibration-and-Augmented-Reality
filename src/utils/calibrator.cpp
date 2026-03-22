@@ -41,6 +41,12 @@ int Calibrator::detectAndDraw(cv::Mat &frame,
     // Use the ArUco detector to find markers in the frame. The detected corners
     // and their corresponding IDs will be stored in 'corners' and 'ids'
     detector.detectMarkers(frame, corners, ids, rejected);
+    if (!corners.empty() && !corners[0].empty())
+    {
+        std::cout << "Detected " << ids.size() << " markers. First marker at: ("
+                  << corners[0][0].x << ", "
+                  << corners[0][0].y << ")\n";
+    }
 
     if (!ids.empty())
     {
