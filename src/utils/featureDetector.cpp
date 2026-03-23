@@ -73,8 +73,8 @@ void FeatureDetector::detectAndDrawGoodFeatures(cv::Mat &frame, int maxCorners)
     for (const auto &pt : corners)
     {
         // Green circles for good features
-        cv::circle(frame, pt, 5, cv::Scalar(0, 255, 0), -1); // 實心圓
-        cv::circle(frame, pt, 8, cv::Scalar(0, 255, 0), 1);  // 外圈
+        cv::circle(frame, pt, 5, cv::Scalar(0, 255, 0), -1);
+        cv::circle(frame, pt, 8, cv::Scalar(0, 255, 0), 1);  
     }
 }
 
