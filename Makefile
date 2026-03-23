@@ -48,7 +48,9 @@ LDLIBS = \
 	-lopencv_imgproc \
 	-lopencv_videoio \
 	-lopencv_objdetect \
-	-lopencv_calib3d
+	-lopencv_calib3d \
+	-lopencv_features2d \
+	-lopencv_xfeatures2d
 BINDIR = ./bin
 SRCDIR = ./src/core
 OBJDIR = ./obj
@@ -76,7 +78,8 @@ $(OBJDIR)/%.o: $(UTILSDIR)/%.cpp | $(OBJDIR)
 all: ar
 
 COMMON_OBJS = $(OBJDIR)/calibrator.o \
-			  $(OBJDIR)/virtualObjectProjector.o
+			  $(OBJDIR)/virtualObjectProjector.o \
+			  $(OBJDIR)/featureDetector.o
 
 
 ar: $(OBJDIR)/main.o \
