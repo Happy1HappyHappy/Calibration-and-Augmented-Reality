@@ -21,10 +21,13 @@ class ARApp
 private:
     Calibrator calib;                               // Calibrator object for handling marker detection and camera calibration
     VirtualObjectProjector projector;               // Virtual object projector for rendering virtual objects in the scene
+    cv::VideoWriter writer;                         // Video writer for saving output video (if processing video stream)
     cv::Mat frame;                                  // current frame captured from the camera
     cv::VideoCapture cap;                           // video capture object for accessing the camera
     std::string uiStatus = "READY";                 // Status message for UI display
     cv::Scalar statusColor = cv::Scalar(0, 255, 0); // Green color for status text
+
+    void loadCalibration(); // Load calibration parameters from file, sets isCalibrated flag accordingly
 
     // Virtual object rendering control
     std::string modeStatus = "MODE: NONE";
@@ -57,7 +60,12 @@ private:
     const std::string calibFile = "data/camera_params.yaml";
 
 public:
-    ARApp();                 // constructor to initialize the application
-    bool initCamera(int id); // init camera with given ID, returns true if successful
-    int run();               // process the main loop of the application
+    ARApp();                                           // constructor to initialize the application
+    bool initSource(const std::string &path);          // init source (camera or video file), returns true if successful
+    bool initCamera(int id);                           // init camera with given ID, returns true if successful
+    void setInitialMode(const std::string &name);      // set the initial mode of the virtual object projector
+    void saveFinalResult(const std::string &filename); // save the final result for static image output
+    int run();                                         // process the main loop of the application
+    bool isProcessingImage = false;                    // flag to indicate whether we are processing a static image
+    bool isProcessingVideo = false;                    // flag to indicate whether we are processing a video stream
 };

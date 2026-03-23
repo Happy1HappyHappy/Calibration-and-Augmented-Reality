@@ -66,8 +66,8 @@ void FeatureDetector::detectAndDrawGoodFeatures(cv::Mat &frame, int maxCorners)
     cv::goodFeaturesToTrack(gray,
                             corners,
                             maxCorners,
-                            0.01,
-                            10.0);
+                            0.1,
+                            20.0);
 
     // Draw circles at the detected corners for visualization
     for (const auto &pt : corners)

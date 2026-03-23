@@ -9,11 +9,13 @@ This project is a real-time Augmented Reality (AR) application built in C++ usin
 
 ## Features
 - **Camera Calibration**: Computes the camera matrix and distortion coefficients using ArUco markers to correct lens distortion and calibrate the view.
-- **Marker Detection**: Detects ArUco dictionary markers in real-time video feeds.
+- **Targets Detection**: Detects ArUco dictionary markers in real-time video feeds. The system correctly identifies and processes multiple ArUco targets simultaneously within the same scene.
 - **Augmented Reality**: Projects dynamic 3D virtual objects (e.g., Pacman, Square, Space Needle) onto detected markers in physical space, with interactive toggles to switch object modes.
 - **Real-time Pose Estimation**: Computes and can output 3D poses (rotation and translation vectors) for markers in real-time using `solvePnP`.
 - **Save/Load Capabilities**: Saves and automatically loads calibration parameters (`camera_params.yaml`) to avoid recalibration in subsequent runs.
 - **Feature Detection**: Detects and draws robust features (e.g., Harris corners, Shi-Tomasi, SURF) in video frames.
+- **Multi-Camera Calibration & Comparison**: Calibrated and compared the performance of different cameras (e.g., built-in Webcam vs. iPhone 17), demonstrating variations in the intrinsic camera matrix and RMS re-projection errors.
+- **Static Image & Video Sequence Support**: The application can process static images and pre-captured video sequences instead of live camera feeds, allowing virtual objects to be inserted into pre-recorded scenes.
 
 ## System Architecture
 The application is structured using Object-Oriented design principles:
@@ -23,6 +25,30 @@ The application is structured using Object-Oriented design principles:
 - **`Calibrator`**: Handles the underlying ArUco marker detection, collects calibration samples, computes camera matrices/distortion parameters, and manages saving/loading calibration data.
 - **`FeatureDetector`**: Provides robust feature detection algorithms (e.g., Harris corners, Shi-Tomasi, SURF) to identify and track keypoints in the video feed.
 - **`VirtualObjectProjector`**: Unifies the representation and rendering of 3D virtual objects. It handles the definition of various 3D shapes (e.g., Pacman, Square, Space Needle) and projects them onto the 2D image plane using the marker's pose and camera matrix.
+
+### Core Class Methods
+
+#### `ARApp`
+- `initSource(const std::string &path)` / `initCamera(int id)`: Initialize the video feed from a file or webcam.
+- `setInitialMode(const std::string &name)`: Set the starting 3D object to project.
+- `run()`: Executes the main loop, handling rendering, calibration logic, and user input.
+- `saveFinalResult(const std::string &filename)`: Saves the rendered output containing AR elements.
+
+#### `Calibrator`
+- `detectAndDraw(...)`: Detects ArUco dictionary markers in the frame and visually draws boundaries.
+- `saveCalibrationData(...)`: Accumulates valid frames for later camera calibration.
+- `calibrate(...)`: Returns camera matrix and distortion coefficients using the saved sample frames.
+- `saveParameters(...)` / `loadParameters(...)`: Manages the serialization of configuration data (via YAML) so calibrations can be warm-started.
+
+#### `FeatureDetector`
+- `detectAndDrawHarris(...)`: Identifies and draws Harris Corners for feature tracking.
+- `detectAndDrawGoodFeatures(...)`: Detects Shi-Tomasi good features to track.
+- `detectAndDrawSURF(...)`: Employs the SURF algorithm to identify robust scale-invariant keypoints.
+
+#### `VirtualObjectProjector`
+- `setShape(ShapeType type)`: Toggles the system to render predefined objects (Pacman, Square, Space Needle).
+- `setCustomShape(const ShapeData& shape)`: Configures the projector with custom user-defined 3D shapes.
+- `render(...)`: Projects 3D points to the 2D image frame and calculates shading/lines according to the target's rotation (`rvec`) and translation (`tvec`).
 
 ## Directory Structure
 ```
@@ -60,6 +86,16 @@ After compiling, the executable `ar` will be generated inside the `bin/` folder.
 ```bash
 ./bin/ar
 ```
+
+## Interactive Controls
+While the application is running, use the following keys to interact:
+- **`s`**: Save calibration parameters (after collecting enough samples).
+- **`1`** - **`3`**: Toggle 3D Virtual Objects (Pacman, Square, Space Needle).
+- **`h`**: Toggle Harris Corners detection.
+- **`g`**: Toggle Shi-Tomasi Good Features detection.
+- **`f`**: Toggle SURF Features detection.
+- **`c`**: Clear / Reset current feature detection mode.
+- **`ESC`**: Exit the application.
 
 ## Acknowledgements
 - **CS5330 Pattern Recognition & Computer Vision** (Northeastern University)

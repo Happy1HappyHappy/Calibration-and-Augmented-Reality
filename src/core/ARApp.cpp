@@ -42,6 +42,134 @@ bool ARApp::initCamera(int id)
 }
 
 /*
+Init the source, which can be either a camera or a video file. If the path is empty,
+it will default to opening the camera.
+*/
+bool ARApp::initSource(const std::string &path)
+{
+    bool success = false;
+
+    if (path.empty())
+    {
+        success = cap.open(0); // open default camera
+    }
+    // If the path is a number, treat it as a camera ID
+    else if (std::all_of(path.begin(), path.end(), ::isdigit))
+    {
+        success = cap.open(std::stoi(path));
+    }
+    // Otherwise, try to open the provided path
+    // (could be a video file or an image sequence)
+    else
+    {
+        success = cap.open(path);
+    }
+
+    if (!success)
+    {
+        std::cerr << "Error: Could not open source: " << path << std::endl;
+        return false;
+    }
+
+    if (success && !path.empty())
+    {
+        // check the file extension
+        std::string ext = path.substr(path.find_last_of(".") + 1);
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+        if (ext == "mp4" || ext == "avi" || ext == "mov")
+        {
+            isProcessingVideo = true;
+            isProcessingImage = false;
+
+            int width = (int)cap.get(cv::CAP_PROP_FRAME_WIDTH);
+            int height = (int)cap.get(cv::CAP_PROP_FRAME_HEIGHT);
+            double fps = cap.get(cv::CAP_PROP_FPS);
+            if (fps <= 0)
+                fps = 30.0;
+
+            writer.open("data/video_ar.mp4", cv::VideoWriter::fourcc('m', 'p', '4', 'v'), fps, cv::Size(width, height));
+            std::cout << "[VIDEO] Writer initialized: " << width << "x" << height << " @ " << fps << "fps" << std::endl;
+        }
+        else
+        {
+            isProcessingImage = true;
+            isProcessingVideo = false;
+        }
+    }
+    // if the source is a video file, we can also try to load calibration parameters
+    loadCalibration();
+    return success;
+}
+
+/*
+Load calibration parameters from file, sets isCalibrated flag accordingly.
+This function will be called during initialization to attempt to load
+existing calibration data, and also can be called later if we want to
+reload parameters after a new calibration session.
+*/
+void ARApp::loadCalibration()
+{
+    if (calib.loadParameters(calibFile, cameraMatrix, distCoeffs, currentRMS))
+    {
+        isCalibrated = true;
+        objPoints = Calibrator::getMarkerObjectPoints(1.0f);
+        uiStatus = "CALIBRATION PARAMETERS LOADED";
+        statusColor = cv::Scalar(0, 255, 0); // green color for success
+    }
+    else
+    {
+        isCalibrated = false;
+        uiStatus = "NO CALIBRATION FILE FOUND";
+        statusColor = cv::Scalar(0, 0, 255); // red color for failure
+    }
+}
+
+/*
+Set initial mode of the virtual object projector based on the provided name
+*/
+void ARApp::setInitialMode(const std::string &name)
+{
+    showObject = true;
+    if (name == "pacman")
+    {
+        currentMode = VirtualObjectProjector::ShapeType::PACMAN;
+        modeStatus = "MODE: PACMAN";
+    }
+    else if (name == "cube")
+    {
+        currentMode = VirtualObjectProjector::ShapeType::SQUARE;
+        modeStatus = "MODE: CUBE";
+    }
+    else if (name == "needle")
+    {
+        currentMode = VirtualObjectProjector::ShapeType::SPACE_NEEDLE;
+        modeStatus = "MODE: SPACE NEEDLE";
+    }
+    projector.setShape(currentMode);
+}
+
+/*
+Save the final result for static image output
+*/
+void ARApp::saveFinalResult(const std::string &filename)
+{
+    if (isProcessingVideo && writer.isOpened())
+    {
+        writer.write(frame);
+    }
+    else if (isProcessingImage && !filename.empty())
+    {
+        cv::imwrite(filename, frame);
+        std::cout << "[STATIC] Saved AR result to: " << filename << std::endl;
+    }
+    else
+    {
+        std::cerr << "Error: No valid source to save." << std::endl;
+    }
+}
+
+/*
 run() is the main loop of the application, it will capture frames from
 the camera, detect markers, and handle user input for calibration.
 */
@@ -56,7 +184,12 @@ int ARApp::run()
     cap >> frame;
     if (frame.empty())
     {
-        std::cerr << "Error: Could not read frame from camera." << std::endl;
+        if (isProcessingVideo)
+        {
+            writer.release();
+            std::cout << "[VIDEO] Processing complete. File saved." << std::endl;
+        }
+        std::cerr << "Error: Could not read frame from source." << std::endl;
         return -1;
     }
     // ===== Variable Initialization =====
@@ -207,7 +340,7 @@ int ARApp::run()
         featureDetector.detectAndDrawGoodFeatures(frame, 150);
         break;
     case SURF:
-        featureDetector.detectAndDrawSURF(frame, 400);
+        featureDetector.detectAndDrawSURF(frame, 1000);
         break;
     default:
         break;
@@ -239,6 +372,25 @@ int ARApp::run()
                 //           << " | tvec: " << tvec.t() << std::endl;
             }
         }
+        if (isProcessingVideo)
+        {
+            saveFinalResult(""); // 逐幀寫入影片，不含 UI 文字
+        }
+        else if (isProcessingImage)
+        {
+            // If we are processing a static file, we only want to process the first frame with detected markers
+            // After that, we can save the result and exit
+            saveFinalResult("data/image_final_result.png");
+            cv::imshow("AR Application", frame); // show the final result with UI for static image mode
+            cv::waitKey(1000);
+            return -1; // Exit after processing the static file
+        }
+    }
+    else if (isProcessingVideo)
+    {
+        // although we don't have detected markers in this frame, we still want
+        // to write it to the output video to keep the timeline consistent
+        saveFinalResult("");
     }
 
     // Draw a semi-transparent black rectangle as the background for the status text
