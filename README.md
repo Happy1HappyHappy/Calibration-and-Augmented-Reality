@@ -5,7 +5,9 @@
 - **Yu-Jing Wei**
 
 ## Overview
-This project is a real-time Augmented Reality (AR) application built in C++ using OpenCV and ArUco markers. It performs camera calibration, marker detection, and projects virtual objects seamlessly onto physical markers using `solvePnP`.
+This project is a real-time Augmented Reality (AR) application built in C++ using OpenCV that allows users to select and project different virtual 3D objects onto detected ArUco markers in a live camera view. The system first identifies markers from the video stream, then performs camera calibration to estimate the intrinsic parameters and distortion coefficients needed for accurate alignment between the virtual and physical worlds. After calibration, it employs `solvePnP` to estimate the real-time 3D pose of each marker, using that information to overlay virtual objects so they appear seamlessly attached to the physical markers in the scene. The application correctly identifies and processes multiple ArUco targets simultaneously.
+
+The system is highly interactive, enabling users to switch between multiple virtual object designs during runtime, including a cube, a Pac-Man model, and a Space Needle wireframe structure. The project also supports saving calibration parameters in YAML files to avoid recalibration, and taking calibration snapshots. In addition to live AR projection, the tool includes capabilities for processing static images and pre-recorded video sequences, performing robust feature detection (Harris corners, Shi-Tomasi, SURF), and comparing calibration performance across multiple cameras.
 
 ## Features
 - **Camera Calibration**: Computes the camera matrix and distortion coefficients using ArUco markers to correct lens distortion and calibrate the view.
