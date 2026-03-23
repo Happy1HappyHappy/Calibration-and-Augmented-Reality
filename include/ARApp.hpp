@@ -9,6 +9,7 @@ Description: Declares the ARApp class for the augmented reality application.
 #pragma once // Include guard
 
 #include "calibrator.hpp"
+#include "featureDetector.hpp"
 #include "virtualObjectProjector.hpp"
 #include <string>
 #include <vector>
@@ -28,6 +29,17 @@ private:
     // Virtual object rendering control
     std::string modeStatus = "MODE: NONE";
     bool showObject = false;
+
+    // feature-based tracking control
+    FeatureDetector featureDetector;
+    enum FeatureMode
+    {
+        NONE,
+        HARRIS,
+        GOOD_FEATURES,
+        SURF
+    };
+    FeatureMode currentFeatureMode = NONE;
 
     // Calibrator data storage
     cv::Mat cameraMatrix;

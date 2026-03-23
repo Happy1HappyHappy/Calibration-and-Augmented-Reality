@@ -73,8 +73,33 @@ int ARApp::run()
     bool shouldSaveSnapshot = false;   // flag to indicate whether we should save the snapshot at the end of this function
     static std::string currentTS = ""; // to store the timestamp for the current calibration session
 
-    // ===== Update Data & Do Calibration ======
-    if (key == 's')
+    // ===== Mode Handling ======
+    // Clear detected corners and reset calibration data when 'c' key is pressed
+    if (key == 'c')
+    {
+        currentFeatureMode = NONE;
+        modeStatus = "MODE: NONE";
+    }
+    // Harris corner detection mode toggle with 'h' key
+    else if (key == 'h')
+    {
+        currentFeatureMode = (currentFeatureMode == HARRIS) ? NONE : HARRIS;
+        modeStatus = (currentFeatureMode == HARRIS) ? "MODE: HARRIS CORNERS" : "MODE: NONE";
+    }
+    // Shi-Tomasi good features detection mode toggle with 'g' key
+    else if (key == 'g')
+    {
+        currentFeatureMode = (currentFeatureMode == GOOD_FEATURES) ? NONE : GOOD_FEATURES;
+        modeStatus = (currentFeatureMode == GOOD_FEATURES) ? "MODE: GOOD FEATURES" : "MODE: NONE";
+    }
+    // SURF feature detection mode toggle with 'f' key
+    else if (key == 'f')
+    {
+        currentFeatureMode = (currentFeatureMode == SURF) ? NONE : SURF;
+        modeStatus = (currentFeatureMode == SURF) ? "MODE: SURF FEATURES" : "MODE: NONE";
+    }
+    // Handle calibration data collection and processing when 's' key is pressed
+    else if (key == 's')
     {
         if (ids.empty())
         {
@@ -172,6 +197,22 @@ int ARApp::run()
         }
     }
 
+    // ==== Corners / Feature Detection Dispatcher ====
+    switch (currentFeatureMode)
+    {
+    case HARRIS:
+        featureDetector.detectAndDrawHarris(frame, 220);
+        break;
+    case GOOD_FEATURES:
+        featureDetector.detectAndDrawGoodFeatures(frame, 150);
+        break;
+    case SURF:
+        featureDetector.detectAndDrawSURF(frame, 400);
+        break;
+    default:
+        break;
+    }
+
     // ==== Draw Detected Markers and UI ====
     // If calibrated and we have detected markers
     if (isCalibrated && !ids.empty())
@@ -200,11 +241,29 @@ int ARApp::run()
         }
     }
 
-    // Draw the current sample count and status message on the frame
+    // Draw a semi-transparent black rectangle as the background for the status text
+    cv::rectangle(frame, cv::Point(10, 10), cv::Point(350, 120), cv::Scalar(0, 0, 0), -1);
+
     std::string progStr = "SAMPLES: " + std::to_string(currentCount) + "/20";
-    cv::putText(frame, progStr, cv::Point(30, 40), cv::FONT_HERSHEY_DUPLEX, 0.8, cv::Scalar(255, 255, 255), 2);
-    cv::putText(frame, uiStatus, cv::Point(30, frame.rows - 40), cv::FONT_HERSHEY_DUPLEX, 1.0, statusColor, 2);
-    cv::putText(frame, modeStatus, cv::Point(30, 80), cv::FONT_HERSHEY_DUPLEX, 0.8, cv::Scalar(0, 255, 255), 2);
+    cv::putText(frame, progStr, cv::Point(30, 40), cv::FONT_HERSHEY_DUPLEX, 0.7, cv::Scalar(255, 255, 255), 1);
+    cv::putText(frame, modeStatus, cv::Point(30, 70), cv::FONT_HERSHEY_DUPLEX, 0.7, cv::Scalar(0, 255, 255), 1);
+
+    // Draw the command list on the right side of the frame
+    int baseY = frame.rows - 160;
+    int xPos = frame.cols - 250;
+    cv::putText(frame, "COMMANDS:", cv::Point(xPos, baseY), cv::FONT_HERSHEY_DUPLEX, 0.8, cv::Scalar(50, 50, 50), 1);
+    cv::putText(frame, "'s': Save Calibration", cv::Point(xPos, baseY + 25), cv::FONT_HERSHEY_DUPLEX, 0.7, cv::Scalar(50, 50, 50), 1);
+    cv::putText(frame, "'1-3': Toggle Objects", cv::Point(xPos, baseY + 45), cv::FONT_HERSHEY_DUPLEX, 0.7, cv::Scalar(50, 50, 50), 1);
+    cv::putText(frame, "'h': Harris Corners", cv::Point(xPos, baseY + 65), cv::FONT_HERSHEY_DUPLEX, 0.7, cv::Scalar(50, 50, 50), 1);
+    cv::putText(frame, "'g': Good Features", cv::Point(xPos, baseY + 85), cv::FONT_HERSHEY_DUPLEX, 0.7, cv::Scalar(50, 50, 50), 1);
+    cv::putText(frame, "'f': SURF Features", cv::Point(xPos, baseY + 105), cv::FONT_HERSHEY_DUPLEX, 0.7, cv::Scalar(50, 50, 50), 1);
+    cv::putText(frame, "'c': Clear / Reset", cv::Point(xPos, baseY + 125), cv::FONT_HERSHEY_DUPLEX, 0.7, cv::Scalar(50, 50, 50), 1);
+    cv::putText(frame, "'ESC': Exit", cv::Point(xPos, baseY + 145), cv::FONT_HERSHEY_DUPLEX, 0.7, cv::Scalar(50, 50, 50), 1);
+
+    // Draw the current status message at the bottom center of the frame
+    cv::Size textSize = cv::getTextSize(uiStatus, cv::FONT_HERSHEY_DUPLEX, 1.0, 2, 0);
+    cv::putText(frame, uiStatus, cv::Point((frame.cols - textSize.width) / 2, frame.rows - 40),
+                cv::FONT_HERSHEY_DUPLEX, 1.0, statusColor, 2);
 
     // Save the snapshot if the flag is set, which means we just successfully calibrated
     if (shouldSaveSnapshot)
@@ -221,11 +280,3 @@ int ARApp::run()
 
     return (key == 27) ? -1 : 0; // EXIT on 'ESC' key press, otherwise continue running
 }
-
-// TODO:
-// ====== Featured-based ======
-// Step 6: Detect Robust Features
-//         1. Use ORB/SIFT/SURF to detect keypoints and descriptors
-//         2. Match features between the current frame and a reference image of the board
-//         3. Use matched keypoints to estimate homography and pose
-//         4. Draw virtual objects based on the estimated pose
